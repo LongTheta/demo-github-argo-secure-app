@@ -4,6 +4,23 @@
 
 ---
 
+## Example Policy Outcome
+
+```text
+✅ Policy Verdict: PASS
+Risk Score: Low
+Promotion Eligible: Yes
+
+Artifacts Generated:
+- report.md
+- review-result.json
+- policy-summary.json
+```
+
+Run the policy agent (see [How to Test](#how-to-test)) to reproduce this result. Contrast with [demo-github-argo-insecure-app](https://github.com/LongTheta/demo-github-argo-insecure-app), which fails policy checks and is blocked from promotion.
+
+---
+
 ## What This Repo Is
 
 A clean, realistic demo application that:
@@ -25,17 +42,6 @@ A clean, realistic demo application that:
 | **Provenance readiness** | Placeholder for cosign/signing |
 | **Secure Kubernetes** | `securityContext`, resource limits, non-root |
 | **Safe GitOps** | Pinned `targetRevision`, no risky auto-prune/selfHeal |
-
----
-
-## Expected Policy Outcome
-
-```
-PASS
-Risk Score: Low
-```
-
-This repo is designed to **PASS** or **PASS_WITH_WARNINGS** under the AI DevSecOps policy enforcement agent.
 
 ---
 
@@ -79,9 +85,10 @@ python -m ai_devsecops_agent.cli review-all \
 
 ### Expected result
 
-- **Verdict:** PASS or PASS_WITH_WARNINGS
+- **Policy Verdict:** PASS (or PASS_WITH_WARNINGS)
 - **Risk Score:** Low
-- Artifacts in `artifacts/` (report.md, review-result.json, policy-summary.json)
+- **Promotion Eligible:** Yes
+- Artifacts in `artifacts/`: `report.md`, `review-result.json`, `policy-summary.json`
 
 ---
 

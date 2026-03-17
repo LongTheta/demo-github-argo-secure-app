@@ -1,0 +1,30 @@
+# Secure-by-default Argo CD Application for demo-github-argo-secure-app
+# Contrast with insecure repo: pinned revision, no risky auto-prune/selfHeal
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app
+  namespace: argocd
+  labels:
+    app: demo-app
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/LongTheta/demo-github-argo-secure-app.git
+    path: k8s
+    # SECURE: Pinned revision - not HEAD. Use tag or commit SHA for promotion.
+    # In GitOps platform: dev→stage→prod promotion updates targetRevision per env
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo-app
+  # SECURE: Manual sync by default. Automated sync only when intentional.
+  # Insecure repo uses prune: true, selfHeal: true - risky for production
+  syncPolicy:
+    automated:
+      # Disabled for safety - enable only for dev with documented approval
+      prune: false
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+  # Sync windows and manual approval gates belong in production overlays

@@ -1,0 +1,84 @@
+# Secure-by-default Deployment for demo-github-argo-secure-app
+# Contrast with demo-github-argo-insecure-app: pinned image, resources, securityContext
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app
+  namespace: demo-app
+  labels:
+    app: demo-app
+    app.kubernetes.io/name: demo-app
+    app.kubernetes.io/component: api
+  annotations:
+    # Traceability for GitOps and audit
+    app.kubernetes.io/managed-by: argocd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-app
+  template:
+    metadata:
+      labels:
+        app: demo-app
+        app.kubernetes.io/name: demo-app
+      annotations:
+        # Placeholder for git-sha - Argo CD image updater or Kustomize can inject
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      # EmptyDir for /tmp - required when readOnlyRootFilesystem: true
+      volumes:
+        - name: tmp
+          emptyDir: {}
+      # Pod-level security: non-root, read-only filesystem
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          # SECURE: Pinned image tag - no :latest
+          # Use digest in production: ghcr.io/owner/repo@sha256:...
+          # Built from Dockerfile; tag updated by promotion pipeline
+          image: ghcr.io/LongTheta/demo-github-argo-secure-app:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          # SECURE: Resource limits prevent DoS and OOM
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          # SECURE: Container-level hardening
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: FLASK_ENV
+              value: "production"
+          # Basic probes for liveness/readiness (add when app supports)
+          # livenessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 8080
+          #   initialDelaySeconds: 10
+          # readinessProbe:
+          #   httpGet:
+          #     path: /health
+          #     port: 8080
+          #   initialDelaySeconds: 5
